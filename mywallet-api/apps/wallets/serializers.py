@@ -1,20 +1,20 @@
 from datetime import datetime, timedelta
+
 from rest_framework import serializers
 
-from apps.wallets.models import CreditRecord, DebitRecord, DepositRecord, Wallet, Year, Month
+from apps.wallets.models import Month, Record, Wallet, Year
+from apps.wallets.utils import generate_record_code, generate_record_group_code
 
 
-def get_months_to_create(record, wallet_code, installments):
+def get_months_to_create(wallet_code, installments, operation_date):
     dates = []
 
     months_to_create = []
 
-    purchase_date = record.get("purchase_date", None)
-
-    dates.append(purchase_date)
+    dates.append(operation_date)
     for _ in range(1, installments):
-        purchase_date = purchase_date + timedelta(days=30)
-        dates.append(purchase_date)
+        operation_date = operation_date + timedelta(days=30)
+        dates.append(operation_date)
 
     for date in dates:
         year = Year.objects.filter(wallet__code=wallet_code).filter(name=date.year).first()
@@ -25,106 +25,61 @@ def get_months_to_create(record, wallet_code, installments):
     return months_to_create
 
 
-class CreditRecordsSerializer(serializers.ModelSerializer):
+class RecordsSerializer(serializers.ModelSerializer):
     wallet_code = serializers.CharField(write_only=True)
 
     class Meta:
-        model = CreditRecord
+        model = Record
         fields = [
             "id",
             "name",
-            "purchase_date",
-            "receiver",
+            "date",
             "comments",
-            "total_price",
-            "wallet_code",
-            "number_of_installments",
+            "value",
+            "payer_or_receiver",
+            "code",
+            "group_code",
             "installment",
-            "installment_value",
+            "quantity_of_installments",
+            "record_type",
+            "wallet_code",
         ]
-        extra_kwargs = {"installment_value": {"read_only": True}}
 
     def create(self, validated_data):
-        number_of_installments = validated_data.get("number_of_installments", None)
+        record_type = validated_data.get("record_type", None)
 
         months_to_create = get_months_to_create(
-            validated_data, validated_data.pop("wallet_code"), number_of_installments
+            validated_data.pop("wallet_code"),
+            validated_data.get("quantity_of_installments", None),
+            validated_data.get("date", None),
         )
 
-        installment_price = validated_data["total_price"] / number_of_installments
+        validated_data["code"] = generate_record_code()
 
-        validated_data["installment_value"] = installment_price
+        if record_type == "credit_record":
+            validated_data["value"] = validated_data["value"] / validated_data["quantity_of_installments"]
 
         validated_data["installment"] = 1
 
+        if len(months_to_create) > 1:
+            validated_data["group_code"] = generate_record_group_code()
+        else:
+            validated_data["group_code"] = validated_data["code"]
+
         for month in months_to_create:
-            new_credit_record = CreditRecord.objects.create(month=month, **validated_data)
+            new_record = Record.objects.create(month=month, **validated_data)
             validated_data["installment"] += 1
+            validated_data["code"] = generate_record_code()
 
-        return new_credit_record
-
-
-class DebitRecordsSerializer(serializers.ModelSerializer):
-    wallet_code = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = DebitRecord
-        fields = [
-            "id",
-            "name",
-            "purchase_date",
-            "receiver",
-            "comments",
-            "price",
-            "wallet_code",
-            "recurrences",
-        ]
-
-    def create(self, validated_data):
-        months_to_create = get_months_to_create(
-            validated_data, validated_data.pop("wallet_code"), validated_data.get("recurrences", None)
-        )
-
-        for month in months_to_create:
-            new_credit_record = DebitRecord.objects.create(month=month, **validated_data)
-
-        return new_credit_record
-
-
-class DepositRecordsSerializer(serializers.ModelSerializer):
-    wallet_code = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = DepositRecord
-        fields = [
-            "id",
-            "name",
-            "receipt_date",
-            "payer",
-            "comments",
-            "value",
-            "wallet_code",
-            "recurrences",
-        ]
-
-    def create(self, validated_data):
-        months_to_create = get_months_to_create(
-            validated_data, validated_data.pop("wallet_code"), validated_data.get("recurrences", None)
-        )
-
-        for month in months_to_create:
-            new_credit_record = DepositRecord.objects.create(month=month, **validated_data)
-
-        return new_credit_record
+        return new_record
 
 
 class MonthSerializer(serializers.ModelSerializer):
-    credit_records = CreditRecordsSerializer(many=True, required=False)
-    debit_records = DebitRecordsSerializer(many=True, required=False)
+    records = RecordsSerializer(many=True, required=False)
 
     class Meta:
         model = Month
-        fields = ["id", "month", "credit_records", "debit_records"]
+        fields = ["id", "month", "records"]
 
 
 class YearSerializer(serializers.ModelSerializer):

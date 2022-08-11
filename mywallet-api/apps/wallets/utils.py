@@ -21,3 +21,5 @@ def generate_code(prefix=None, length=32):
 
 
 generate_wallet_code = partial(generate_code, prefix="WLT", length=16)
+generate_record_code = partial(generate_code, prefix="RCD", length=16)
+generate_record_group_code = partial(generate_code, prefix="RCG", length=16)

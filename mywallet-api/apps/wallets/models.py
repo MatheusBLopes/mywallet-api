@@ -3,6 +3,12 @@ from django.db import models
 
 from apps.wallets.utils import generate_wallet_code
 
+RECORD_CHOICES = (
+    ("debit", "debit"),
+    ("credit", "credit"),
+    ("deposit", "deposit"),
+)
+
 
 class Wallet(models.Model):
     name = models.CharField(max_length=255)
@@ -19,39 +25,21 @@ class Month(models.Model):
     year = models.ForeignKey(Year, related_name="months", on_delete=models.CASCADE)
 
 
-class DebitRecord(models.Model):
+class Record(models.Model):
     name = models.CharField(max_length=255)
-    purchase_date = models.DateField()
-    receiver = models.CharField(max_length=400)
+    date = models.DateField()
     comments = models.CharField(max_length=500, blank=True)
-    price = models.FloatField()
 
-    recurrences = models.PositiveIntegerField(default=1)
-
-    month = models.ForeignKey(Month, on_delete=models.CASCADE, related_name="debit_records")
-
-
-class CreditRecord(models.Model):
-    name = models.CharField(max_length=255)
-    purchase_date = models.DateField()
-    receiver = models.CharField(max_length=400)
-    comments = models.CharField(max_length=500, blank=True)
-    number_of_installments = models.PositiveIntegerField(default=1)
-    installment = models.PositiveIntegerField(default=1)
-    total_price = models.FloatField()
-    installment_value = models.FloatField(default=0)
-
-    month = models.ForeignKey(Month, on_delete=models.CASCADE, related_name="credit_records")
-
-
-class DepositRecord(models.Model):
-    name = models.CharField(max_length=255)
-    receipt_date = models.DateField()
-
-    payer = models.CharField(max_length=400)
-    comments = models.CharField(max_length=500, blank=True)
     value = models.FloatField()
 
-    recurrences = models.PositiveIntegerField(default=1)
+    payer_or_receiver = models.CharField(max_length=400)
 
-    month = models.ForeignKey(Month, on_delete=models.CASCADE, related_name="deposit_records")
+    code = models.CharField(editable=False, max_length=16, unique=True)
+    group_code = models.CharField(editable=False, max_length=16)
+
+    installment = models.PositiveIntegerField(default=1)
+    quantity_of_installments = models.PositiveIntegerField(default=1)
+
+    record_type = models.CharField(max_length=64, choices=RECORD_CHOICES)
+
+    month = models.ForeignKey(Month, on_delete=models.CASCADE, related_name="records")

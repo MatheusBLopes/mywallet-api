@@ -1,12 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from apps.wallets.views import (
-    DebitRecordsViewSet,
-    WalletViewSet,
-    CreditRecordsViewSet
-
-)
+from apps.wallets.views import RecordsView, WalletViewSet
 
 app_name = "wallets"
 
@@ -16,6 +11,6 @@ router.register("wallets", WalletViewSet, basename="Wallets")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("wallets/<str:wallet_code>/credit-record", CreditRecordsViewSet.as_view(), name="wallet_credit_record"),
-    path("wallets/<str:wallet_code>/debit-record", DebitRecordsViewSet.as_view(), name="wallet_debit_record")
+    path("records/", RecordsView.as_view(), name="records"),
+    path("records/<str:record_code>", RecordsView.as_view(), name="delete_records"),
 ]
