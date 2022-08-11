@@ -1,8 +1,33 @@
+[tool.black]
+line-length = 110
+target-version = ["py38"]
+include = '\.pyi?$'
+
+[tool.isort]
+line_length = 110
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+known_local_folder = "apps,mywallet-api,tests,utils"
+sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+default_section = "THIRDPARTY"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "mywallet_api.settings"
+addopts = "-vv --reuse-db --tb=native --cov=apps"
+pytestenvvars__env_files = [
+    ".env",
+]
+pytestenvvars__dont_randomize_envvars = [
+    "DATABASE_URL",
+]
+
 [tool.poetry]
 name = "mywallet-api"
 version = "0.1.0"
 description = ""
-authors = ["MatheusBLopes <mathesublopes10@gmail.com>"]
+authors = ["MatheusBLopes <matheusblopes10@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -23,6 +48,7 @@ pytest-django = "^4.5.2"
 pytest-envvars = "^1.2.1"
 pytest-randomly = "^3.12.0"
 factory-boy = "^3.2.1"
+black = {version = "^22.6.0", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

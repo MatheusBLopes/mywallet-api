@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from prettyconf import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,6 +30,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # 3rd party libs
+    "rest_framework",
+    "apps.wallets",
 ]
 
 MIDDLEWARE = [

@@ -7,7 +7,7 @@
 
 # :book: Overview
 
-This project is a production-ready API for money management
+This project is a production-ready API for financial management
 
 # :pushpin: Table of Contents
 
